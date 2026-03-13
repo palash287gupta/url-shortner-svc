@@ -10,6 +10,18 @@ go run main.go
 
 The server will start on port 8080.
 
+### Using Docker
+
+Build the image:
+```bash
+docker build -t url-shortener .
+```
+
+Run the container:
+```bash
+docker run -p 8080:8080 url-shortener
+```
+
 ## API Usage
 
 ### Shorten a URL
