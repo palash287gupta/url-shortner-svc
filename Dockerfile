@@ -6,8 +6,8 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY main.go ./
-RUN CGO_ENABLED=0 GOOS=linux go build -o url-shortner-svc main.go
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -o url-shortner-svc .
 
 # Final stage
 FROM alpine:latest

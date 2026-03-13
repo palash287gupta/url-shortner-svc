@@ -6,10 +6,15 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/palash287gupta/url-shortner-svc/handler"
+	"github.com/palash287gupta/url-shortner-svc/model"
+	"github.com/palash287gupta/url-shortner-svc/storage"
+	"github.com/palash287gupta/url-shortner-svc/util"
 )
 
 func TestGenerateShortCode(t *testing.T) {
-	code := generateShortCode()
+	code := util.GenerateShortCode()
 	if len(code) != 6 {
 		t.Errorf("Expected length 6, got %d", len(code))
 	}
@@ -17,7 +22,7 @@ func TestGenerateShortCode(t *testing.T) {
 
 func TestExtractDomain(t *testing.T) {
 	url := "https://www.youtube.com/watch?v=123"
-	domain := extractDomain(url)
+	domain := util.ExtractDomain(url)
 	if domain != "www.youtube.com" {
 		t.Errorf("Expected www.youtube.com, got %s", domain)
 	}
@@ -29,13 +34,13 @@ func TestShortenHandler(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
-	shortenHandler(w, req)
+	handler.ShortenHandler(w, req)
 
 	if w.Code != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", w.Code)
 	}
 
-	var resp ShortenResponse
+	var resp model.ShortenResponse
 	json.NewDecoder(w.Body).Decode(&resp)
 
 	if resp.ShortURL == "" {
@@ -45,9 +50,9 @@ func TestShortenHandler(t *testing.T) {
 
 func TestDeduplication(t *testing.T) {
 	// Clear maps before test
-	urlMap = make(map[string]string)
-	reverseMap = make(map[string]string)
-	domainCount = make(map[string]int)
+	storage.URLMap = make(map[string]string)
+	storage.ReverseMap = make(map[string]string)
+	storage.DomainCount = make(map[string]int)
 
 	reqBody := `{"url":"https://www.test.com"}`
 
@@ -55,18 +60,18 @@ func TestDeduplication(t *testing.T) {
 	req1 := httptest.NewRequest("POST", "/shorten", bytes.NewBufferString(reqBody))
 	req1.Header.Set("Content-Type", "application/json")
 	w1 := httptest.NewRecorder()
-	shortenHandler(w1, req1)
+	handler.ShortenHandler(w1, req1)
 
-	var resp1 ShortenResponse
+	var resp1 model.ShortenResponse
 	json.NewDecoder(w1.Body).Decode(&resp1)
 
 	// Second request with same URL
 	req2 := httptest.NewRequest("POST", "/shorten", bytes.NewBufferString(reqBody))
 	req2.Header.Set("Content-Type", "application/json")
 	w2 := httptest.NewRecorder()
-	shortenHandler(w2, req2)
+	handler.ShortenHandler(w2, req2)
 
-	var resp2 ShortenResponse
+	var resp2 model.ShortenResponse
 	json.NewDecoder(w2.Body).Decode(&resp2)
 
 	if resp1.ShortURL != resp2.ShortURL {
@@ -76,13 +81,13 @@ func TestDeduplication(t *testing.T) {
 
 func TestRedirectHandler(t *testing.T) {
 	// Setup test data
-	urlMap = make(map[string]string)
-	urlMap["test123"] = "https://www.google.com"
+	storage.URLMap = make(map[string]string)
+	storage.URLMap["test123"] = "https://www.google.com"
 
 	req := httptest.NewRequest("GET", "/test123", nil)
 	w := httptest.NewRecorder()
 
-	redirectHandler(w, req)
+	handler.RedirectHandler(w, req)
 
 	if w.Code != http.StatusFound {
 		t.Errorf("Expected status 302, got %d", w.Code)
