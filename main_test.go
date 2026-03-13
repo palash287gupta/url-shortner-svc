@@ -73,3 +73,23 @@ func TestDeduplication(t *testing.T) {
 		t.Errorf("Expected same short URL, got %s and %s", resp1.ShortURL, resp2.ShortURL)
 	}
 }
+
+func TestRedirectHandler(t *testing.T) {
+	// Setup test data
+	urlMap = make(map[string]string)
+	urlMap["test123"] = "https://www.google.com"
+
+	req := httptest.NewRequest("GET", "/test123", nil)
+	w := httptest.NewRecorder()
+
+	redirectHandler(w, req)
+
+	if w.Code != http.StatusFound {
+		t.Errorf("Expected status 302, got %d", w.Code)
+	}
+
+	location := w.Header().Get("Location")
+	if location != "https://www.google.com" {
+		t.Errorf("Expected redirect to https://www.google.com, got %s", location)
+	}
+}
