@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -110,9 +111,26 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	mu.RLock()
 	defer mu.RUnlock()
 
-	w.Header().Set("Content-Type", "text/plain")
+	// Create slice to sort domains by count
+	type domainMetric struct {
+		domain string
+		count  int
+	}
+
+	var domains []domainMetric
 	for domain, count := range domainCount {
-		w.Write([]byte(domain + ": " + strconv.Itoa(count) + "\n"))
+		domains = append(domains, domainMetric{domain: domain, count: count})
+	}
+
+	// Sort by count descending
+	sort.Slice(domains, func(i, j int) bool {
+		return domains[i].count > domains[j].count
+	})
+
+	// Get top 3
+	w.Header().Set("Content-Type", "text/plain")
+	for i := 0; i < len(domains) && i < 3; i++ {
+		w.Write([]byte(domains[i].domain + ": " + strconv.Itoa(domains[i].count) + "\n"))
 	}
 }
 
