@@ -5,10 +5,10 @@ A simple URL shortener service built with Go.
 ## How to Run
 
 ```bash
-go run main.go
+go run ./cmd/url-shortner-svc/main.go
 ```
 
-The server will start on port 8080.
+Server will start on port 8080.
 
 ### Using Docker
 
@@ -19,7 +19,13 @@ docker build -t url-shortener .
 
 Run the container:
 ```bash
-docker run -p 8080:8080 url-shortener
+docker run -d -p 8080:8080 --name url-shortener url-shortener
+```
+
+Check logs:
+```bash
+docker logs -f url-shortener
+```
 ```
 
 ## API Usage
