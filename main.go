@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"math/rand"
 	"net/http"
 	"sort"
@@ -10,6 +9,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -67,6 +68,10 @@ func shortenHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Check if URL already shortened
 	if existingCode, found := reverseMap[req.URL]; found {
+		log.WithFields(log.Fields{
+			"url":  req.URL,
+			"code": existingCode,
+		}).Info("Returning existing short code")
 		resp := ShortenResponse{ShortURL: "http://localhost:8080/" + existingCode}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(resp)
@@ -80,6 +85,11 @@ func shortenHandler(w http.ResponseWriter, r *http.Request) {
 	// Track domain count
 	domain := extractDomain(req.URL)
 	domainCount[domain]++
+
+	log.WithFields(log.Fields{
+		"url":  req.URL,
+		"code": shortCode,
+	}).Info("Created new short code")
 
 	resp := ShortenResponse{ShortURL: "http://localhost:8080/" + shortCode}
 	w.Header().Set("Content-Type", "application/json")
@@ -104,10 +114,16 @@ func redirectHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.WithFields(log.Fields{
+		"code": shortCode,
+		"url":  originalURL,
+	}).Info("Redirecting to original URL")
 	http.Redirect(w, r, originalURL, http.StatusFound)
 }
 
 func metricsHandler(w http.ResponseWriter, r *http.Request) {
+	log.Info("Metrics endpoint accessed")
+
 	mu.RLock()
 	defer mu.RUnlock()
 
@@ -142,7 +158,7 @@ func main() {
 	http.HandleFunc("/", redirectHandler)
 
 	port := ":8080"
-	log.Printf("Starting server on port %s", port)
+	log.WithField("port", port).Info("Starting URL Shortener Service")
 
 	if err := http.ListenAndServe(port, nil); err != nil {
 		log.Fatal(err)
