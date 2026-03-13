@@ -1,9 +1,7 @@
 package main
 
 import (
-	"math/rand"
 	"net/http"
-	"time"
 
 	"github.com/palash287gupta/url-shortner-svc/config"
 	"github.com/palash287gupta/url-shortner-svc/handler"
@@ -12,8 +10,6 @@ import (
 )
 
 func main() {
-	rand.Seed(time.Now().UnixNano())
-
 	cfg := config.LoadConfig()
 
 	http.HandleFunc("/shorten", handler.ShortenHandler)

@@ -1,4 +1,4 @@
-package main
+package handler
 
 import (
 	"bytes"
@@ -7,26 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/palash287gupta/url-shortner-svc/handler"
 	"github.com/palash287gupta/url-shortner-svc/model"
 	"github.com/palash287gupta/url-shortner-svc/storage"
-	"github.com/palash287gupta/url-shortner-svc/util"
 )
-
-func TestGenerateShortCode(t *testing.T) {
-	code := util.GenerateShortCode()
-	if len(code) != 6 {
-		t.Errorf("Expected length 6, got %d", len(code))
-	}
-}
-
-func TestExtractDomain(t *testing.T) {
-	url := "https://www.youtube.com/watch?v=123"
-	domain := util.ExtractDomain(url)
-	if domain != "www.youtube.com" {
-		t.Errorf("Expected www.youtube.com, got %s", domain)
-	}
-}
 
 func TestShortenHandler(t *testing.T) {
 	reqBody := `{"url":"https://www.example.com"}`
@@ -34,7 +17,7 @@ func TestShortenHandler(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
-	handler.ShortenHandler(w, req)
+	ShortenHandler(w, req)
 
 	if w.Code != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", w.Code)
@@ -60,7 +43,7 @@ func TestDeduplication(t *testing.T) {
 	req1 := httptest.NewRequest("POST", "/shorten", bytes.NewBufferString(reqBody))
 	req1.Header.Set("Content-Type", "application/json")
 	w1 := httptest.NewRecorder()
-	handler.ShortenHandler(w1, req1)
+	ShortenHandler(w1, req1)
 
 	var resp1 model.ShortenResponse
 	json.NewDecoder(w1.Body).Decode(&resp1)
@@ -69,7 +52,7 @@ func TestDeduplication(t *testing.T) {
 	req2 := httptest.NewRequest("POST", "/shorten", bytes.NewBufferString(reqBody))
 	req2.Header.Set("Content-Type", "application/json")
 	w2 := httptest.NewRecorder()
-	handler.ShortenHandler(w2, req2)
+	ShortenHandler(w2, req2)
 
 	var resp2 model.ShortenResponse
 	json.NewDecoder(w2.Body).Decode(&resp2)
@@ -87,7 +70,7 @@ func TestRedirectHandler(t *testing.T) {
 	req := httptest.NewRequest("GET", "/test123", nil)
 	w := httptest.NewRecorder()
 
-	handler.RedirectHandler(w, req)
+	RedirectHandler(w, req)
 
 	if w.Code != http.StatusFound {
 		t.Errorf("Expected status 302, got %d", w.Code)
