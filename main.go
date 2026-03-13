@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -109,10 +110,9 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	mu.RLock()
 	defer mu.RUnlock()
 
-	// Just print all domains and their counts for now
 	w.Header().Set("Content-Type", "text/plain")
 	for domain, count := range domainCount {
-		w.Write([]byte(domain + ": " + string(rune(count)) + "\n"))
+		w.Write([]byte(domain + ": " + strconv.Itoa(count) + "\n"))
 	}
 }
 
