@@ -74,7 +74,7 @@ func shortenHandler(w http.ResponseWriter, r *http.Request) {
 	shortCode := generateShortCode()
 	urlMap[shortCode] = req.URL
 	reverseMap[req.URL] = shortCode
-	
+
 	// Track domain count
 	domain := extractDomain(req.URL)
 	domainCount[domain]++
@@ -105,10 +105,22 @@ func redirectHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, originalURL, http.StatusFound)
 }
 
+func metricsHandler(w http.ResponseWriter, r *http.Request) {
+	mu.RLock()
+	defer mu.RUnlock()
+
+	// Just print all domains and their counts for now
+	w.Header().Set("Content-Type", "text/plain")
+	for domain, count := range domainCount {
+		w.Write([]byte(domain + ": " + string(rune(count)) + "\n"))
+	}
+}
+
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
 	http.HandleFunc("/shorten", shortenHandler)
+	http.HandleFunc("/metrics", metricsHandler)
 	http.HandleFunc("/", redirectHandler)
 
 	port := ":8080"
