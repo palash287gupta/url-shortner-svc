@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/palash287gupta/url-shortner-svc/config"
 	"github.com/palash287gupta/url-shortner-svc/handler"
 
 	log "github.com/sirupsen/logrus"
@@ -13,11 +14,13 @@ import (
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
+	cfg := config.LoadConfig()
+
 	http.HandleFunc("/shorten", handler.ShortenHandler)
 	http.HandleFunc("/metrics", handler.MetricsHandler)
 	http.HandleFunc("/", handler.RedirectHandler)
 
-	port := ":8080"
+	port := ":" + cfg.Port
 	log.WithField("port", port).Info("Starting URL Shortener Service")
 
 	if err := http.ListenAndServe(port, nil); err != nil {
