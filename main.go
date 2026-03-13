@@ -50,8 +50,20 @@ func shortenHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	mu.Lock()
+	defer mu.Unlock()
+
+	// Check if URL already shortened
+	if existingCode, found := reverseMap[req.URL]; found {
+		resp := ShortenResponse{ShortURL: "http://localhost:8080/" + existingCode}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
+		return
+	}
+
 	shortCode := generateShortCode()
 	urlMap[shortCode] = req.URL
+	reverseMap[req.URL] = shortCode
 
 	resp := ShortenResponse{ShortURL: "http://localhost:8080/" + shortCode}
 	w.Header().Set("Content-Type", "application/json")
