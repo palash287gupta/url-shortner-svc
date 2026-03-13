@@ -1,12 +1,21 @@
-FROM golang:1.24
+# Build stage
+FROM golang:1.24 AS builder
 
 WORKDIR /app
 
-COPY go.mod ./
-COPY main.go ./
+COPY go.mod go.sum ./
+RUN go mod download
 
-RUN go build -o url-shortner-svc main.go
+COPY main.go ./
+RUN CGO_ENABLED=0 GOOS=linux go build -o url-shortner-svc main.go
+
+# Final stage
+FROM alpine:latest
+
+WORKDIR /app
+
+COPY --from=builder /app/url-shortner-svc .
 
 EXPOSE 8080
 
-CMD ["./url-shortner-svc"]
+ENTRYPOINT ["./url-shortner-svc"]
