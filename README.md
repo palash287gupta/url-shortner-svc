@@ -34,8 +34,23 @@ curl -L http://localhost:8080/abc123
 
 It will redirect you to the original URL.
 
+### Get Metrics
+
+Get the top 3 most shortened domains:
+```bash
+curl http://localhost:8080/metrics
+```
+
+Response:
+```
+www.udemy.com: 6
+www.youtube.com: 4
+en.wikipedia.org: 2
+```
+
 ## Features
 
 - Generates 6-character short codes
 - Returns the same short code if URL is already shortened
 - Thread-safe in-memory storage
+- Track and display top 3 most shortened domains
