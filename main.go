@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -70,10 +71,32 @@ func shortenHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
+func redirectHandler(w http.ResponseWriter, r *http.Request) {
+	path := r.URL.Path
+	shortCode := strings.TrimPrefix(path, "/")
+
+	if shortCode == "" {
+		http.Error(w, "Invalid URL", http.StatusBadRequest)
+		return
+	}
+
+	mu.RLock()
+	originalURL, found := urlMap[shortCode]
+	mu.RUnlock()
+
+	if !found {
+		http.Error(w, "Short URL not found", http.StatusNotFound)
+		return
+	}
+
+	http.Redirect(w, r, originalURL, http.StatusFound)
+}
+
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
 	http.HandleFunc("/shorten", shortenHandler)
+	http.HandleFunc("/", redirectHandler)
 
 	port := ":8080"
 	log.Printf("Starting server on port %s", port)
