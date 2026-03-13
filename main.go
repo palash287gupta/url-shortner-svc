@@ -11,9 +11,10 @@ import (
 )
 
 var (
-	urlMap     = make(map[string]string) // short code -> original URL
-	reverseMap = make(map[string]string) // original URL -> short code
-	mu         sync.RWMutex
+	urlMap      = make(map[string]string) // short code -> original URL
+	reverseMap  = make(map[string]string) // original URL -> short code
+	domainCount = make(map[string]int)    // domain -> count
+	mu          sync.RWMutex
 )
 
 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -32,6 +33,14 @@ func generateShortCode() string {
 		b[i] = charset[rand.Intn(len(charset))]
 	}
 	return string(b)
+}
+
+func extractDomain(url string) string {
+	parts := strings.Split(url, "/")
+	if len(parts) > 2 {
+		return parts[2]
+	}
+	return url
 }
 
 func shortenHandler(w http.ResponseWriter, r *http.Request) {
@@ -65,6 +74,10 @@ func shortenHandler(w http.ResponseWriter, r *http.Request) {
 	shortCode := generateShortCode()
 	urlMap[shortCode] = req.URL
 	reverseMap[req.URL] = shortCode
+	
+	// Track domain count
+	domain := extractDomain(req.URL)
+	domainCount[domain]++
 
 	resp := ShortenResponse{ShortURL: "http://localhost:8080/" + shortCode}
 	w.Header().Set("Content-Type", "application/json")
