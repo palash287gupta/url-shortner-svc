@@ -7,13 +7,27 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/palash287gupta/url-shortner-svc/model"
-	"github.com/palash287gupta/url-shortner-svc/storage"
-	"github.com/palash287gupta/url-shortner-svc/util"
+	"github.com/palash287gupta/url-shortner-svc/internal/model"
+	"github.com/palash287gupta/url-shortner-svc/internal/storage"
+	"github.com/palash287gupta/url-shortner-svc/internal/util"
 	log "github.com/sirupsen/logrus"
 )
 
-func ShortenHandler(w http.ResponseWriter, r *http.Request) {
+type Config struct {
+	BaseURL string
+}
+
+type Handler struct {
+	config *Config
+}
+
+func NewHandler(cfg *Config) *Handler {
+	return &Handler{
+		config: cfg,
+	}
+}
+
+func (h *Handler) ShortenHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		log.WithFields(log.Fields{
 			"method": r.Method,
@@ -48,7 +62,7 @@ func ShortenHandler(w http.ResponseWriter, r *http.Request) {
 			"shortCode": existingShortCode,
 		}).Info("URL already shortened, returning existing short code")
 		resp := model.ShortenResponse{
-			ShortURL: "http://localhost:8080/" + existingShortCode,
+			ShortURL: h.config.BaseURL + "/" + existingShortCode,
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(resp)
@@ -71,14 +85,14 @@ func ShortenHandler(w http.ResponseWriter, r *http.Request) {
 	}).Info("URL shortened successfully")
 
 	resp := model.ShortenResponse{
-		ShortURL: "http://localhost:8080/" + shortCode,
+		ShortURL: h.config.BaseURL + "/" + shortCode,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
 }
 
-func RedirectHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) RedirectHandler(w http.ResponseWriter, r *http.Request) {
 	shortCode := strings.TrimPrefix(r.URL.Path, "/")
 
 	if shortCode == "" {
@@ -107,7 +121,7 @@ func RedirectHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, originalURL, http.StatusFound)
 }
 
-func MetricsHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 	storage.Mu.RLock()
 	defer storage.Mu.RUnlock()
 
