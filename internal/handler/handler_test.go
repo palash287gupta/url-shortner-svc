@@ -7,17 +7,19 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/palash287gupta/url-shortner-svc/model"
-	"github.com/palash287gupta/url-shortner-svc/storage"
+	"github.com/palash287gupta/url-shortner-svc/internal/model"
+	"github.com/palash287gupta/url-shortner-svc/internal/storage"
 )
 
 func TestShortenHandler(t *testing.T) {
+	h := NewHandler(&Config{BaseURL: "http://localhost:8080"})
+
 	reqBody := `{"url":"https://www.example.com"}`
 	req := httptest.NewRequest("POST", "/shorten", bytes.NewBufferString(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
-	ShortenHandler(w, req)
+	h.ShortenHandler(w, req)
 
 	if w.Code != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", w.Code)
@@ -32,6 +34,8 @@ func TestShortenHandler(t *testing.T) {
 }
 
 func TestDeduplication(t *testing.T) {
+	h := NewHandler(&Config{BaseURL: "http://localhost:8080"})
+
 	// Clear maps before test
 	storage.URLMap = make(map[string]string)
 	storage.ReverseMap = make(map[string]string)
@@ -43,7 +47,7 @@ func TestDeduplication(t *testing.T) {
 	req1 := httptest.NewRequest("POST", "/shorten", bytes.NewBufferString(reqBody))
 	req1.Header.Set("Content-Type", "application/json")
 	w1 := httptest.NewRecorder()
-	ShortenHandler(w1, req1)
+	h.ShortenHandler(w1, req1)
 
 	var resp1 model.ShortenResponse
 	json.NewDecoder(w1.Body).Decode(&resp1)
@@ -52,7 +56,7 @@ func TestDeduplication(t *testing.T) {
 	req2 := httptest.NewRequest("POST", "/shorten", bytes.NewBufferString(reqBody))
 	req2.Header.Set("Content-Type", "application/json")
 	w2 := httptest.NewRecorder()
-	ShortenHandler(w2, req2)
+	h.ShortenHandler(w2, req2)
 
 	var resp2 model.ShortenResponse
 	json.NewDecoder(w2.Body).Decode(&resp2)
@@ -63,6 +67,8 @@ func TestDeduplication(t *testing.T) {
 }
 
 func TestRedirectHandler(t *testing.T) {
+	h := NewHandler(&Config{BaseURL: "http://localhost:8080"})
+
 	// Setup test data
 	storage.URLMap = make(map[string]string)
 	storage.URLMap["test123"] = "https://www.google.com"
@@ -70,7 +76,7 @@ func TestRedirectHandler(t *testing.T) {
 	req := httptest.NewRequest("GET", "/test123", nil)
 	w := httptest.NewRecorder()
 
-	RedirectHandler(w, req)
+	h.RedirectHandler(w, req)
 
 	if w.Code != http.StatusFound {
 		t.Errorf("Expected status 302, got %d", w.Code)
