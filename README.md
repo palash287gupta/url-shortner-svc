@@ -13,19 +13,27 @@ Server will start on port 8080.
 ### Using Docker
 
 Build the image:
+
 ```bash
-docker build -t url-shortener .
+make docker-build
 ```
 
 Run the container:
+
 ```bash
-docker run -d -p 8080:8080 --name url-shortener url-shortener
+make docker-run
+```
+
+Stop the container:
+
+```bash
+make docker-stop
 ```
 
 Check logs:
+
 ```bash
-docker logs -f url-shortener
-```
+docker logs -f url-shortner-svc
 ```
 
 ## API Usage
@@ -39,6 +47,7 @@ curl -X POST http://localhost:8080/shorten \
 ```
 
 Response:
+
 ```json
 {"short_url":"http://localhost:8080/abc123"}
 ```
@@ -46,6 +55,7 @@ Response:
 ### Access Short URL
 
 Just visit the short URL or:
+
 ```bash
 curl -L http://localhost:8080/abc123
 ```
@@ -55,12 +65,14 @@ It will redirect you to the original URL.
 ### Get Metrics
 
 Get the top 3 most shortened domains:
+
 ```bash
 curl http://localhost:8080/metrics
 ```
 
 Response:
-```
+
+```txt
 www.udemy.com: 6
 www.youtube.com: 4
 en.wikipedia.org: 2
